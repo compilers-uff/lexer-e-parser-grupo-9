@@ -71,8 +71,6 @@ Comment           = \#.*
 
 %%
 
-<YYINITIAL> "abstract"        { return symbol(ChocoPyTokens.ABSTRACT); } 
-
 <YYINITIAL> {
 
 
@@ -104,7 +102,7 @@ Comment           = \#.*
 
   /* Operators. */
   "+"                         { return symbol(ChocoPyTokens.PLUS, yytext()); }
-
+  "/"                         { return symbol(ChocoPyTokens.INTDIV, yytext()); }
   "="                         { return symbol(ChocoPyTokens.EQ); }
   "=="                        { return symbol(ChocoPyTokens.EQEQ); }
   "!="                        { return symbol(ChocoPyTokens.NOTEQ); }

@@ -171,16 +171,19 @@ terminal String STRING_LITERAL;
 non terminal Program           program;
 non terminal List<Declaration> program_head;
 non terminal List<Stmt>        stmt_list, opt_stmt_list;
+non terminal TypeAnnotation    type;
+non terminal VarDef            var_def;
 non terminal Stmt              stmt, expr_stmt;
 non terminal Expr              expr, binary_expr;
 
 /* Precedences (lowest to highest) for resolving what would otherwise be
  * ambiguities in the form of shift/reduce conflicts.. */
-precedence left PLUS;
+precedence left PLUS, MINUS;
+precedence left MULT, INTDIV;
+precedence left COLON, PERIOD, COMMA, LBRACK, RBRACK;
 
 /* The start symbol. */
 start with program;
-
 
 /*****  GRAMMAR RULES *****/
 
