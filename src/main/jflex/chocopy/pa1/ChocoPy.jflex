@@ -59,18 +59,22 @@ import java_cup.runtime.*;
 
 WhiteSpace = [ \t]
 LineBreak  = \r|\n|\r\n
-
+InputCharacter = [^\r\n]
 IntegerLiteral = 0 | [1-9][0-9]*
 Identifier = [a-zA-Z_][a-zA-Z0-9_]*
+
 
 StringChar        = [^\"\n\\]
 EscapeSequence    = \\[btnr\"\\]
 Comment           = \#.*
 
+
 %%
 
+<YYINITIAL> "abstract"        { return symbol(ChocoPyTokens.ABSTRACT); } 
 
 <YYINITIAL> {
+
 
   /* KeyWords */
   "def"           { return symbol(ChocoPyTokens.DEF); }
@@ -90,6 +94,7 @@ Comment           = \#.*
   "global"        { return symbol(ChocoPyTokens.GLOBAL); }
   "nonlocal"      { return symbol(ChocoPyTokens.NONLOCAL); }
 
+
   /* Delimiters. */
   {LineBreak}                 { return symbol(ChocoPyTokens.NEWLINE); }
 
@@ -99,6 +104,7 @@ Comment           = \#.*
 
   /* Operators. */
   "+"                         { return symbol(ChocoPyTokens.PLUS, yytext()); }
+
   "="                         { return symbol(ChocoPyTokens.EQ); }
   "=="                        { return symbol(ChocoPyTokens.EQEQ); }
   "!="                        { return symbol(ChocoPyTokens.NOTEQ); }
@@ -143,6 +149,19 @@ Comment           = \#.*
   }
   \n|\r { return symbol(ChocoPyTokens.UNRECOGNIZED); }
 }
+
+<STRING> {
+    \"                        { yybegin(YYINITIAL);
+                                return symbol(ChocoPyTokens.STRING_LITERAL,
+                                string.toString());}
+    [^\n\r\"\\]+              { string.append( yytext() ); }
+    \\t                       { string.append('\t'); }
+    \\n                       { string.append('\n'); }
+
+    \\r                       { string.append('\r'); }
+    \\\"                      { string.append('\"'); }
+    \\                        { string.append('\\'); }
+  }
 
 <<EOF>>                       { return symbol(ChocoPyTokens.EOF); }
 
