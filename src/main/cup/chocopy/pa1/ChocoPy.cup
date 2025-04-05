@@ -149,6 +149,20 @@ terminal Integer NUMBER;
  * the grammar, it indicates a syntax error. */
 terminal UNRECOGNIZED;   
 
+terminal
+    DEF, CLASS, IF, ELSE, ELIF, WHILE, RETURN, PASS,
+    NOT, AND, OR, IS, GLOBAL, NONLOCAL,
+    TRUE, FALSE, NONE,
+
+    EQ, EQEQ, NOTEQ, LT, LTE, GT, GTE,
+    MINUS, STAR, SLASH,
+    DOT, COLON, COMMA,
+    LPAREN, RPAREN, LBRACK, RBRACK,
+
+    IDENTIFIER, INDENT, DEDENT;
+
+terminal String STRING_LITERAL;
+
 /* Nonterminal symbols (defined in production rules below).
  * As for terminal symbols, 
  *     non terminal <type> <identifier1>, ..., <identifiern>; 
