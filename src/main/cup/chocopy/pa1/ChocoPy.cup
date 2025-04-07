@@ -149,19 +149,15 @@ terminal String PLUS;
 terminal Integer NUMBER;
 terminal UNRECOGNIZED;   
 
-terminal String
-    String DEF, String SCLASS, String IF, String ELSE, String ELIF, String WHILE, String RETURN, String PASS,
-    String NOT, String AND, String OR, String IS, String GLOBAL, String NONLOCAL,
-    String TRUE, String FALSE, String NONE,
-
-    String EQ, String EQEQ, String NOTEQ, String LT, String LTE, String GT, String GTE,
-    String MINUS, String STAR, String SLASH,
-    String DOT, String COLON, String COMMA,
-    String LPAREN, String RPAREN, String LBRACK, String RBRACK,
-
-    String MULT, String INTDIV, String PERIOD,
-
-    String IDENTIFIER, String INDENT, String DEDENT;
+terminal String DEF, SCLASS, IF, ELSE, ELIF, WHILE, RETURN, PASS,
+    NOT, AND, OR, IS, GLOBAL, NONLOCAL,
+    TRUE, FALSE, NONE,
+    EQ, EQEQ, NOTEQ, LT, LTE, GT, GTE,
+    MINUS, STAR, SLASH,
+    DOT, COLON, COMMA,
+    LPAREN, RPAREN, LBRACK, RBRACK,
+    MULT, INTDIV, PERIOD,
+    IDENTIFIER, INDENT, DEDENT;
 
 terminal String STRING_LITERAL;
 
@@ -214,7 +210,7 @@ program_head ::= {: RESULT = empty(); :}
 typed_var ::= IDENTIFIER:id COLON:c type:t {: RESULT = new TypedVar(idxleft, txright, id, t); :}
             ;
 
-/*identifier ::= ID:id {: RESULT = new Identifier(idxleft, idxright, id); :}
+/*identifier ::= IDENTIFIER:id {: RESULT = new Identifier(idxleft, idxright, id); :}
              ;*/
 
 type ::= IDENTIFIER:id                      {: RESULT = new ClassType(idxleft, idxright, id.name); :}
@@ -255,9 +251,10 @@ expr ::= binary_expr:e  {: RESULT = e; :}
 
 /* Definir as expressões identifier, binary, MINUS, NUMBER e etc...*/
 
-assign_expr ::= expr:e1                                         {: RESULT = e1; :}
-              | IDENTIFIER:id EQ:e assign_expr:ae           {: RESULT = new VarAssignExpr(idxleft, aexright, id, ae); :}
+assign_expr ::= IDENTIFIER:id EQ:e assign_expr:ae {: RESULT = new VarAssignExpr(idxleft, aexright, id, ae); :}
+              | binary_expr:e {: RESULT = e; :}
               ;
+
 
 /* A binary expression, illustrating how to find the left and right
  * source position of a phrase. */
