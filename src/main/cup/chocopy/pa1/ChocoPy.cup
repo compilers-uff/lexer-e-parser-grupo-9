@@ -141,25 +141,27 @@ action code {:
  * does the same, and in addition indicates that the lexer supplies a
  * semantic value of type <type> for these symbols that may be referenced
  * in actions ( {: ... :} ).
- */
+ * Returned by the lexer for erroneous tokens.  Since it does not appear in
+ * the grammar, it indicates a syntax error. */
+
 terminal NEWLINE;
 terminal String PLUS; 
-terminal Integer NUMBER; 
-/* Returned by the lexer for erroneous tokens.  Since it does not appear in
- * the grammar, it indicates a syntax error. */
+terminal Integer NUMBER;
 terminal UNRECOGNIZED;   
 
-terminal
-    DEF, CLASS, IF, ELSE, ELIF, WHILE, RETURN, PASS,
-    NOT, AND, OR, IS, GLOBAL, NONLOCAL,
-    TRUE, FALSE, NONE,
+terminal String
+    String DEF, String SCLASS, String IF, String ELSE, String ELIF, String WHILE, String RETURN, String PASS,
+    String NOT, String AND, String OR, String IS, String GLOBAL, String NONLOCAL,
+    String TRUE, String FALSE, String NONE,
 
-    EQ, EQEQ, NOTEQ, LT, LTE, GT, GTE,
-    MINUS, STAR, SLASH,
-    DOT, COLON, COMMA,
-    LPAREN, RPAREN, LBRACK, RBRACK,
+    String EQ, String EQEQ, String NOTEQ, String LT, String LTE, String GT, String GTE,
+    String MINUS, String STAR, String SLASH,
+    String DOT, String COLON, String COMMA,
+    String LPAREN, String RPAREN, String LBRACK, String RBRACK,
 
-    IDENTIFIER, INDENT, DEDENT;
+    String MULT, String INTDIV, String PERIOD,
+
+    String IDENTIFIER, String INDENT, String DEDENT;
 
 terminal String STRING_LITERAL;
 
@@ -175,12 +177,15 @@ non terminal TypeAnnotation    type;
 non terminal VarDef            var_def;
 non terminal Stmt              stmt, expr_stmt;
 non terminal Expr              expr, binary_expr;
+non terminal ClassDef          class_def;
+non terminal TypedVar          typed_var;
+non terminal AssignExpr        assign_expr;
 
 /* Precedences (lowest to highest) for resolving what would otherwise be
  * ambiguities in the form of shift/reduce conflicts.. */
 precedence left PLUS, MINUS;
 precedence left MULT, INTDIV;
-precedence left COLON, PERIOD, COMMA, LBRACK, RBRACK;
+precedence left COLON, PERIOD, COMMA, LBRACK, RBRACK; /* Ver esse PERIOD*/
 
 /* The start symbol. */
 start with program;
@@ -194,26 +199,32 @@ program ::= program_head:d opt_stmt_list:s
         ;
 
 /* Initial list of declarations. */
+/*
+class_def ::= class identifier:id  LPAREN identifier:id1 RPAREN : NEWLINE INDENT class_body DEDENT
+*/
 program_head ::= {: RESULT = empty(); :}
                | program_head: ph var_def:vd  {: RESULT = combine(ph, vd); :}
-               | program_head: ph class_def:cd {: RESULT = combine(ph, fd); :}
+         /*      | program_head: ph func_def:fd {: RESULT = combine(ph, fd); :}*/
                | program_head: ph class_def:cd {: RESULT = combine(ph, cd); :}
-               | {: RESULT = empty(); :}
                 ;
 
-typed_var ::= identifier:id COLON:c type:t {: RESULT = new TypedVar(idxleft, txright, id, t); :}
+/* func_def ::= def identifier:id LPAREN L 
+               | */
+
+typed_var ::= IDENTIFIER:id COLON:c type:t {: RESULT = new TypedVar(idxleft, txright, id, t); :}
             ;
 
-identifier ::= ID:id {: RESULT = new Identifier(idxleft, idxright, id); :}
-             ;
+/*identifier ::= ID:id {: RESULT = new Identifier(idxleft, idxright, id); :}
+             ;*/
 
-type ::= identifier:id                      {: RESULT = new ClassType(idxleft, idxright, id.name); :}
+type ::= IDENTIFIER:id                      {: RESULT = new ClassType(idxleft, idxright, id.name); :}
       | LBRACK:lb type:t RBRACK:rb          {: RESULT = new ListType(lbxleft, rbxright, t); :}
-      | STRING:s                            {: RESULT = new ClassType(sxleft, sxright, s); :}
+      | STRING_LITERAL:s                    {: RESULT = new ClassType(sxleft, sxright, s); :}
       |                                     {: RESULT = new NoneType(); :}
       ;
 
-var_def ::= typed_var:tv EQUALS:e literal:l NEWLINE:n
+
+var_def ::= typed_var:tv EQ:e STRING_LITERAL:l NEWLINE:n
          {: RESULT = new VarDef(tvxleft, lxright, tv, l); :}
          ;
 
@@ -244,7 +255,7 @@ expr ::= binary_expr:e  {: RESULT = e; :}
 /* Definir as expressões identifier, binary, MINUS, NUMBER e etc...*/
 
 assign_expr ::= expr:e1                                         {: RESULT = e1; :}
-              | identifier:id EQUALS:e assign_expr:ae           {: RESULT = new VarAssignExpr(idxleft, aexright, id, ae); :}
+              | IDENTIFIER:id EQ:e assign_expr:ae           {: RESULT = new VarAssignExpr(idxleft, aexright, id, ae); :}
               ;
 
 /* A binary expression, illustrating how to find the left and right
