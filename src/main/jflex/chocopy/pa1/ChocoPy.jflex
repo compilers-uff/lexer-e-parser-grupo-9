@@ -130,36 +130,21 @@ Comment           = \#.*
 }
 
 <STRING> {
-  {StringChar}+   { string.append(yytext()); }
-  {EscapeSequence} {
-    switch (yytext()) {
-      case "\\n": string.append('\n'); break;
-      case "\\t": string.append('\t'); break;
-      case "\\r": string.append('\r'); break;
-      case "\\b": string.append('\b'); break;
-      case "\\\"": string.append('\"'); break;
-      case "\\\\": string.append('\\'); break;
-    }
-  }
+  [^\"\n\\]+ { string.append(yytext()); }
+
+  \\t { string.append('\t'); }
+  \\n { string.append('\n'); }
+  \\r { string.append('\r'); }
+  \\\" { string.append('\"'); }
+  \\\\ { string.append('\\'); }
+
   \" {
     yybegin(YYINITIAL);
     return symbol(ChocoPyTokens.STRING_LITERAL, string.toString());
   }
+
   \n|\r { return symbol(ChocoPyTokens.UNRECOGNIZED); }
 }
-
-<STRING> {
-    \"                        { yybegin(YYINITIAL);
-                                return symbol(ChocoPyTokens.STRING_LITERAL,
-                                string.toString());}
-    [^\n\r\"\\]+              { string.append( yytext() ); }
-    \\t                       { string.append('\t'); }
-    \\n                       { string.append('\n'); }
-
-    \\r                       { string.append('\r'); }
-    \\\"                      { string.append('\"'); }
-    \\                        { string.append('\\'); }
-  }
 
 <<EOF>>                       { return symbol(ChocoPyTokens.EOF); }
 

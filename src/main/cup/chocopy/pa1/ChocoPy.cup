@@ -235,6 +235,7 @@ opt_stmt_list ::=                    {: RESULT = empty(); :}
 stmt_list ::= stmt:s                 {: RESULT = single(s); :}
             | stmt_list:l stmt:s     {: RESULT = combine(l, s); :}
             | stmt_list:l error      {: RESULT = l; :}
+            
             /* If there is a syntax error in the source, this says to discard
              * symbols from the parsing stack and perform reductions until
              * there is a stmt_list on top of the stack, and then to discard
