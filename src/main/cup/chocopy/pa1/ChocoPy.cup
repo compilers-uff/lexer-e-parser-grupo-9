@@ -168,14 +168,14 @@ non terminal Program           program;
 non terminal List<Declaration> declaration_list;
 non terminal Declaration       declaration, var_def, func_def, class_def;
 non terminal List<Stmt>        stmt_list, opt_stmt_list, block;
-non terminal Stmt              stmt, expr_stmt, return_stmt, pass_stmt, if_stmt, while_stmt, for_stmt, global_stmt, nonlocal_stmt;
+non terminal Stmt              stmt, expr_stmt, return_stmt, pass_stmt, while_stmt, for_stmt, global_stmt, nonlocal_stmt;
 non terminal Expr              expr, binary_expr, unary_expr, literal_expr, primary_expr;
 non terminal Expr              func_call, attr_access, index_access;
 non terminal List<Expr>        expr_list, opt_expr_list;
-non terminal List<TypedVar>   opt_typed_args, typed_arg_list;
-non terminal List<ElifBranch> opt_elif_else, elif_list;
+non terminal List<TypedVar>    opt_typed_args, typed_arg_list;
+non terminal List<ElifBranch>  opt_elif_else, elif_list;
 non terminal TypeAnnotation    type;
-
+non terminal Object            if_stmt;
 /* Precedences (lowest to highest) for resolving what would otherwise be
  * ambiguities in the form of shift/reduce conflicts.. */
 
@@ -209,29 +209,29 @@ declaration ::= var_def:d {: RESULT = d; :}
              ;
 
 var_def ::= IDENTIFIER:id COLON type:t EQ expr:e NEWLINE:nl
-           {: RESULT = new VarDef(idleft, nlxright, id, t, e); :}
+           {: RESULT = new VarDef(idxleft, nlxright, id, t, e); :}
          ;
 
 func_def ::= DEF IDENTIFIER:id LPAREN opt_typed_args:args RPAREN ARROW type:ret_type COLON NEWLINE block:b
-            {: RESULT = new FuncDef(idleft, getRight(b), id, args, ret_type, b); :}
+            {: RESULT = new FuncDef(idxleft, getRight(b), id, args, ret_type, b); :}
           ;
 
 class_def ::= CLASS IDENTIFIER:id LPAREN IDENTIFIER:parent RPAREN COLON NEWLINE block:body
-            {: RESULT = new ClassDef(idleft, getRight(body), id, parent, body); :}
+            {: RESULT = new ClassDef(idxleft, getRight(body), id, parent, body); :}
            ;
 
 opt_typed_args ::= /* empty */ {: RESULT = empty(); :}
                 | typed_arg_list:l {: RESULT = l; :}
                 ;
 
-typed_arg_list ::= IDENTIFIER:id COLON type:t {: RESULT = single(new TypedVar(idleft, t)); :}
+typed_arg_list ::= IDENTIFIER:id COLON type:t {: RESULT = single(new TypedVar(idxleft, t)); :}
                  | typed_arg_list:l COMMA IDENTIFIER:id COLON type:t
-                   {: RESULT = combine(l, new TypedVar(idleft, t)); :}
+                   {: RESULT = combine(l, new TypedVar(idxleft, t)); :}
                  ;
 
 stmt_list ::= stmt:s              {: RESULT = single(s); :}
-           | stmt_list:l stmt:s  {: RESULT = combine(l, s); :}
-           | stmt_list:l error   {: RESULT = l; :}
+           | stmt_list:l stmt:s   {: RESULT = combine(l, s); :}
+           | stmt_list:l error    {: RESULT = l; :}
            ;
 
 opt_stmt_list ::= /* empty */ {: RESULT = empty(); :}
@@ -263,18 +263,20 @@ pass_stmt ::= PASS:p NEWLINE:nl {: RESULT = new PassStmt(pxleft, nlxright); :}
            ;
 
 if_stmt ::= IF:if expr:c COLON block:t opt_elif_else:e
-           {: RESULT = new IfStmt(ifxleft, getRight(e, t), c, t, e); :}
+           {: RESULT = new IfStmt(idxleft, getRight(e, t), c, t, e); :}
          ;
+         
 
 opt_elif_else ::= /* empty */ {: RESULT = empty(); :}
                 | elif_list:l {: RESULT = l; :}
-                | elif_list:l ELSE:e COLON block:b {: RESULT = combine(l, new ElifBranch(exleft, b)); :}
-                | ELSE:e COLON block:b {: RESULT = single(new ElifBranch(exleft, b)); :}
+                | elif_list:l ELSE COLON block:b {: RESULT = combine(l, new ElifBranch(exleft, b)); :}
+                | ELSE COLON block:b {: RESULT = single(new ElifBranch(exleft, b)); :}
                 ;
 
 elif_list ::= ELIF expr:c COLON block:b {: RESULT = single(new ElifBranch(c, b)); :}
            | elif_list:l ELIF expr:c COLON block:b {: RESULT = combine(l, new ElifBranch(c, b)); :}
-           ;
+           ;  /* PROBLEMA AQUI */
+        
 
 while_stmt ::= WHILE:w expr:c COLON block:b {: RESULT = new WhileStmt(wxleft, getRight(b), c, b); :}
             ;
@@ -329,7 +331,7 @@ literal_expr ::= NUMBER:n {: RESULT = new IntegerLiteral(nxleft, nxright, n); :}
               | NONE:n {: RESULT = new NoneLiteral(nxleft, nxright); :}
               ;
 
-primary_expr ::= IDENTIFIER:id {: RESULT = new Identifier(idleft, idright, id); :}
+primary_expr ::= IDENTIFIER:id {: RESULT = new Identifier(idxleft, idxright, id); :}
               | LPAREN expr:e RPAREN {: RESULT = e; :}
               | func_call:e {: RESULT = e; :}
               | attr_access:e {: RESULT = e; :}
@@ -359,7 +361,7 @@ expr_list ::= expr:e {: RESULT = single(e); :}
           | expr_list:l COMMA expr:e {: RESULT = combine(l, e); :}
           ;
 
-type ::= IDENTIFIER:id {: RESULT = new IdType(idleft, id); :}
+type ::= IDENTIFIER:id {: RESULT = new IdType(idxleft, id); :}
       | STRING_LITERAL:s {: RESULT = new StringType(sxleft, s); :}
       | LBRACK:lb type:t RBRACK {: RESULT = new ListType(lbxleft, t); :}
       ;
