@@ -208,8 +208,8 @@ declaration ::= var_def:d {: RESULT = d; :}
              | class_def:c {: RESULT = c; :}
              ;
 
-var_def ::= IDENTIFIER:id COLON type:t EQ expr:e NEWLINE
-           {: RESULT = new VarDef(idleft, NEWLINExright, id, t, e); :}
+var_def ::= IDENTIFIER:id COLON type:t EQ expr:e NEWLINE:nl
+           {: RESULT = new VarDef(idleft, nlxright, id, t, e); :}
          ;
 
 func_def ::= DEF IDENTIFIER:id LPAREN opt_typed_args:args RPAREN ARROW type:ret_type COLON NEWLINE block:b
@@ -249,38 +249,38 @@ stmt ::= expr_stmt
       | if_stmt
       | while_stmt
       | for_stmt
-      | UNRECOGNIZED NEWLINE {: RESULT = new PassStmt(UNRECOGNIZEDxleft, NEWLINExright); :}
+      | UNRECOGNIZED:u NEWLINE:nl {: RESULT = new PassStmt(uxleft, nlxright); :}
       ;
 
 expr_stmt ::= expr:e NEWLINE {: RESULT = new ExprStmt(exleft, exright, e); :}
           ;
 
-return_stmt ::= RETURN expr:e NEWLINE {: RESULT = new ReturnStmt(RETURNxleft, NEWLINExright, e); :}
-             | RETURN NEWLINE {: RESULT = new ReturnStmt(RETURNxleft, NEWLINExright, null); :}
+return_stmt ::= RETURN:n expr:e NEWLINE:nl {: RESULT = new ReturnStmt(nxleft, nlxright, e); :}
+             | RETURN:n NEWLINE:nl {: RESULT = new ReturnStmt(nxleft, nlxright, null); :}
              ;
 
-pass_stmt ::= PASS NEWLINE {: RESULT = new PassStmt(PASSxleft, NEWLINExright); :}
+pass_stmt ::= PASS:p NEWLINE:nl {: RESULT = new PassStmt(pxleft, nlxright); :}
            ;
 
-if_stmt ::= IF expr:c COLON block:t opt_elif_else:e
-           {: RESULT = new IfStmt(IFxleft, getRight(e, t), c, t, e); :}
+if_stmt ::= IF:if expr:c COLON block:t opt_elif_else:e
+           {: RESULT = new IfStmt(ifxleft, getRight(e, t), c, t, e); :}
          ;
 
 opt_elif_else ::= /* empty */ {: RESULT = empty(); :}
                 | elif_list:l {: RESULT = l; :}
-                | elif_list:l ELSE COLON block:b {: RESULT = combine(l, new ElifBranch(ELSEleft, b)); :}
-                | ELSE COLON block:b {: RESULT = single(new ElifBranch(ELSEleft, b)); :}
+                | elif_list:l ELSE:e COLON block:b {: RESULT = combine(l, new ElifBranch(exleft, b)); :}
+                | ELSE:e COLON block:b {: RESULT = single(new ElifBranch(exleft, b)); :}
                 ;
 
 elif_list ::= ELIF expr:c COLON block:b {: RESULT = single(new ElifBranch(c, b)); :}
            | elif_list:l ELIF expr:c COLON block:b {: RESULT = combine(l, new ElifBranch(c, b)); :}
            ;
 
-while_stmt ::= WHILE expr:c COLON block:b {: RESULT = new WhileStmt(WHILExleft, getRight(b), c, b); :}
+while_stmt ::= WHILE:w expr:c COLON block:b {: RESULT = new WhileStmt(wxleft, getRight(b), c, b); :}
             ;
 
-for_stmt ::= FOR IDENTIFIER:id IN expr:iter COLON block:b
-           {: RESULT = new ForStmt(FORxleft, getRight(b), id, iter, b); :}
+for_stmt ::= FOR:f IDENTIFIER:id IN expr:iter COLON block:b
+           {: RESULT = new ForStmt(fxleft, getRight(b), id, iter, b); :}
           ;
 
 expr ::= binary_expr:e  {: RESULT = e; :}
@@ -324,9 +324,9 @@ unary_expr ::= NOT:op expr:e {: RESULT = new UnaryExpr(opxleft, exright, op, e);
 
 literal_expr ::= NUMBER:n {: RESULT = new IntegerLiteral(nxleft, nxright, n); :}
               | STRING_LITERAL:s {: RESULT = new StringLiteral(sxleft, sxright, s); :}
-              | TRUE {: RESULT = new BooleanLiteral(TRUExleft, TRUExright, true); :}
-              | FALSE {: RESULT = new BooleanLiteral(FALSExleft, FALSExright, false); :}
-              | NONE {: RESULT = new NoneLiteral(NONExleft, NONExright); :}
+              | TRUE:t {: RESULT = new BooleanLiteral(txleft, txright, true); :}
+              | FALSE:f {: RESULT = new BooleanLiteral(fxleft, fxright, false); :}
+              | NONE:n {: RESULT = new NoneLiteral(nxleft, nxright); :}
               ;
 
 primary_expr ::= IDENTIFIER:id {: RESULT = new Identifier(idleft, idright, id); :}
@@ -336,19 +336,19 @@ primary_expr ::= IDENTIFIER:id {: RESULT = new Identifier(idleft, idright, id); 
               | index_access:e {: RESULT = e; :}
               ;
 
-global_stmt ::= GLOBAL IDENTIFIER:id NEWLINE {: RESULT = new PassStmt(GLOBALxleft, NEWLINExright); :};
-nonlocal_stmt ::= NONLOCAL IDENTIFIER:id NEWLINE {: RESULT = new PassStmt(NONLOCALxleft, NEWLINExright); :};
+global_stmt ::= GLOBAL:g IDENTIFIER:id NEWLINE:nl {: RESULT = new PassStmt(gxleft, nlxright); :};
+nonlocal_stmt ::= NONLOCAL:n IDENTIFIER:id NEWLINE:nl {: RESULT = new PassStmt(nxleft, nlxright); :};
 
-func_call ::= primary_expr:e1 LPAREN opt_expr_list:args RPAREN
-           {: RESULT = new CallExpr(e1xleft, RPARENxright, e1, args); :}
+func_call ::= primary_expr:e1 LPAREN opt_expr_list:args RPAREN:rp
+           {: RESULT = new CallExpr(e1xleft, rpxright, e1, args); :}
            ;
 
 attr_access ::= primary_expr:e1 DOT IDENTIFIER:id
              {: RESULT = new MemberExpr(e1xleft, idxright, e1, id); :}
              ;
 
-index_access ::= primary_expr:e1 LBRACK expr:e2 RBRACK
-              {: RESULT = new IndexExpr(e1xleft, RBRACKxright, e1, e2); :}
+index_access ::= primary_expr:e1 LBRACK expr:e2 RBRACK:rb
+              {: RESULT = new IndexExpr(e1xleft, rbxright, e1, e2); :}
               ;
 
 opt_expr_list ::= /* empty */ {: RESULT = empty(); :}
@@ -361,5 +361,5 @@ expr_list ::= expr:e {: RESULT = single(e); :}
 
 type ::= IDENTIFIER:id {: RESULT = new IdType(idleft, id); :}
       | STRING_LITERAL:s {: RESULT = new StringType(sxleft, s); :}
-      | LBRACK type:t RBRACK {: RESULT = new ListType(LBRACKxleft, t); :}
+      | LBRACK:lb type:t RBRACK {: RESULT = new ListType(lbxleft, t); :}
       ;
