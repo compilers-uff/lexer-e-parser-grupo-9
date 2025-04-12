@@ -1,5 +1,8 @@
 package chocopy.pa1;
 import java_cup.runtime.*;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.ArrayList;
 
 %%
 
@@ -8,7 +11,7 @@ import java_cup.runtime.*;
 %unicode
 %line
 %column
-
+%states YYAFTER, STRING
 %class ChocoPyLexer
 %public
 
@@ -32,8 +35,19 @@ import java_cup.runtime.*;
 
     /** Producer of token-related values for the parser. */
     final ComplexSymbolFactory symbolFactory = new ComplexSymbolFactory();
+    private int indent_current = 0;
+    private String string_current = "";
+    private int string_line = 0, string_column = 0;
+    private StringBuilder string = new StringBuilder(); /* verificar */
 
-    private StringBuilder string = new StringBuilder();
+    private ArrayList<Integer> stack;
+    private boolean indentErrorUnchecked;
+
+    public ChocoPyLexer(java.io.Reader in) {
+    this.yyreset(in);
+    this.stack = new ArrayList<>(20);
+    this.indentErrorUnchecked = true;
+    }
 
     /** Return a terminal symbol of syntactic category TYPE and no
      *  semantic value at the current source location. */
@@ -49,30 +63,100 @@ import java_cup.runtime.*;
             new ComplexSymbolFactory.Location(yyline + 1,yycolumn + yylength()),
             value);
     }
-    
-    private String processStringLiteral(String text) {
-        return text.substring(1, text.length() - 1)
-                   .replace("\\n", "\n")
-                   .replace("\\t", "\t")
-                   .replace("\\r", "\r")
-                   .replace("\\\"", "\"")
-                   .replace("\\\\", "\\");
+    private Deque<Integer> stack;
+    public ChocoPyLexer(java.io.Reader in) {
+        this.yyreset(in);
+        this.stack = new ArrayDeque<>(20);
+        this.indentErrorUnchecked = true;
+    }
+    private void push(int indent) {
+        stack.push(indent);
     }
 
+    private int pop() {
+        return stack.isEmpty() ? 0 : stack.pop();
+    }
+
+    private int top() {
+        return stack.isEmpty() ? 0 : stack.peek();
+    }
+
+    private boolean find(int indent) {
+        return indent == 0 || stack.contains(indent);
+    }
+    private boolean isDedent() {
+    return top() > currIndent;
+    }
+    private boolean isIndent() {
+        return top() < currIndent;
+    }
+    private Symbol handleDedent() {
+        pop();
+        if (top() < currIndent) {
+            currIndent = top();
+            return makeSymbol("<bad indentation>", ChocoPyTokens.UNRECOGNIZED);
+        }
+        return makeSymbol(ChocoPyTokens.terminalNames[ChocoPyTokens.DEDENT], ChocoPyTokens.DEDENT);
+    }
+
+    private Symbol handleIndent() {
+        push(currIndent);
+        return makeSymbol(ChocoPyTokens.terminalNames[ChocoPyTokens.INDENT], ChocoPyTokens.INDENT);
+    }
+
+    private Symbol makeSymbol(String name, int token) {
+        return symbolFactory.newSymbol(name, token,
+            new ComplexSymbolFactory.Location(yyline + 1, yycolumn - 1),
+            new ComplexSymbolFactory.Location(yyline + 1, yycolumn + yylength()),
+            currIndent);
+}
 %}
 
 /* === Macros === */
 WhiteSpace = [ \t]+
 LineBreak  = \r\n|[\r\n]
-Identifier = [a-zA-Z_][a-zA-Z0-9_]*
 IntegerLiteral = 0|[1-9][0-9]*
-StringLiteral = \"([^\"\\n\\\\]|\\\\[btnr\"\\\\])*\" 
-Comment = \#.*
-
+StringLiteral = ([^\"\\]|(\\\")|(\\t)|(\\r)|(\\n)|(\\\\))+ 
+Identifier = [a-zA-Z_][a-zA-Z0-9_]*
+Comment = #[^\r\n]*
 %%
 
 <YYINITIAL> {
 
+  /* === Espaços e Comentários === */
+  {WhiteSpace}        {
+    if (yytext() == "\t")
+      indent_current += 4;
+    else
+      indent_current += 1;
+  }
+
+  {LineBreak} { 
+    return symbol(ChocoPyTokens.NEWLINE); 
+  }
+  {Comment}           { /* ignora */ }
+
+  [^ \t\r\n#] {
+    yypushback(1);
+
+    if (isDedent()) {
+        return handleDedent();
+    }
+
+    yybegin(YYAFTER);
+
+    if (isIndent()) {
+        return handleIndent();
+    }
+}
+
+}
+
+<YYAFTER>{
+  {LineBreak} { yybegin(YYINITIAL); indent_current = 0; indentErrorUnchecked = true; return symbol(ChocoPyTokens.NEWLINE);}
+  /* === Espaços e Comentários === */
+  {WhiteSpace}        { /* ignora */ }
+  {Comment}           { /* ignora */ }
   /* === Palavras-chave === */
   "def"       { return symbol(ChocoPyTokens.DEF); }
   "class"     { return symbol(ChocoPyTokens.CLASS); }
@@ -93,10 +177,11 @@ Comment = \#.*
   "True"      { return symbol(ChocoPyTokens.TRUE); }
   "False"     { return symbol(ChocoPyTokens.FALSE); }
   "None"      { return symbol(ChocoPyTokens.NONE); }
+  "\"" {yybegin(STRING); string_line = yyline + 1; string_column = yycolumn + 1; string_current = "";}
 
   /* === Literais === */
   {IntegerLiteral}    { return symbol(ChocoPyTokens.NUMBER, Integer.parseInt(yytext())); }
-  {StringLiteral}     { return symbol(ChocoPyTokens.STRING_LITERAL, processStringLiteral(yytext())); }
+
 
   /* === Identificadores === */
   {Identifier}        { return symbol(ChocoPyTokens.IDENTIFIER, yytext()); }
@@ -125,14 +210,19 @@ Comment = \#.*
   "]"     { return symbol(ChocoPyTokens.RBRACK); }
   "->"    { return symbol(ChocoPyTokens.ARROW); }
 
-  /* === Espaços e Comentários === */
-  {WhiteSpace}        { /* ignora */ }
-  {LineBreak}         { return symbol(ChocoPyTokens.NEWLINE); }
-  {Comment}           { /* ignora */ }
 }
 
-<<EOF>> {
-  return symbol(ChocoPyTokens.EOF);
+<STRING>{
+  {StringLiteral}              {string_current += yytext(); }
+  \\$                          {/* fim */}
+  "\""                         { yybegin(YYAFTER); return symbolFactory.newSymbol(ChocoPyTokens.terminalNames[ChocoPyTokens.STRING], ChocoPyTokens.STRING,
+                                   new ComplexSymbolFactory.Location(string_line, string_column),
+                                   new ComplexSymbolFactory.Location(yyline + 1,yycolumn + yylength()), string_current); }
+}
+
+<<EOF>> { if(!stack.isEmpty()){ 
+    return symbol(ChocoPyTokens.DEDENT, pop());} 
+    return symbol(ChocoPyTokens.EOF); 
 }
 
 /* Token não reconhecido */
