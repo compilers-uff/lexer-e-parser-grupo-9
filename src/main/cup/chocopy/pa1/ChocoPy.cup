@@ -377,12 +377,12 @@ cexpr ::= pexpr:pe                                {: RESULT = pe; :}
 /* pexpr */
 pexpr ::= identifier:id                                   {: RESULT = id; :}
         | literal:l                                       {: RESULT = l; :}
-        | LBRACK:LBRACK expr_list:l RBRACK:RBRACK                     {: RESULT = new ListExpr(LBRACKxleft, RBRACKxright, l); :}
-        | LPAREN:LPAREN expr:e RPAREN:RPAREN                      {: RESULT = e; :}
+        | LBRACK:lbrack expr_list:l RBRACK:rbrack                   {: RESULT = new ListExpr(lbrackxleft, rbrackxright, l); :}
+        | LPAREN:lparen expr:e RPAREN:rparen                     {: RESULT = e; :}
         | member_expr:m                                   {: RESULT = m; :}
         | index_expr:i                                    {: RESULT = i; :}
-        | member_expr:m LPAREN expr_list:l RPAREN:RPAREN        {: RESULT = new MethodCallExpr(mxleft, RPARENxright, m, l); :}
-        | identifier:id LPAREN expr_list:l RPAREN:RPAREN        {: RESULT = new CallExpr(idxleft, RPARENxright, id, l); :}
+        | member_expr:m LPAREN expr_list:l RPAREN:rparen        {: RESULT = new MethodCallExpr(mxleft, rparenxright, m, l); :}
+        | identifier:id LPAREN expr_list:l RPAREN:rparen        {: RESULT = new CallExpr(idxleft, rparenxright, id, l); :}
         | pexpr:p1 PLUS:bo pexpr:p2                       {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
         | pexpr:p1 MINUS:bo pexpr:p2                      {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
         | pexpr:p1 MULT:bo pexpr:p2                        {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
@@ -400,7 +400,8 @@ expr_list ::= expr:e                                      {: RESULT = single(e);
 bin_op ::= PLUS:a                                           {: RESULT = new StringLiteral(axleft, axright, "+"); :}
           | MINUS:a                                         {: RESULT = new StringLiteral(axleft, axright, "-"); :}
           | MULT:a                                           {: RESULT = new StringLiteral(axleft, axright, "*"); :}
-          | DIV:a                                           {: RESULT = new StringLiteral(axleft, axright, "//"); :}  
+          | DIV:a                                           {: RESULT = new StringLiteral(axleft, axright, "/"); :}
+          | INTDIV:a                                        {: RESULT = new StringLiteral(axleft, axright, "//"); :}
           | MOD:a                                           {: RESULT = new StringLiteral(axleft, axright, "%"); :} 
           ;
 

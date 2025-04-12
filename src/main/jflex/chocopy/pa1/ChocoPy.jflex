@@ -180,7 +180,7 @@ Comment = #[^\r\n]*
   "-"     { return symbol(ChocoPyTokens.MINUS); }
   "*"     { return symbol(ChocoPyTokens.MULT); }
   "//"    { return symbol(ChocoPyTokens.INTDIV); }
-  "/"    { return symbol(ChocoPyTokens.DIV); }
+  "/"     { return symbol(ChocoPyTokens.DIV); }
   "%"     { return symbol(ChocoPyTokens.MOD); }
 
   /* === Delimitadores === */
