@@ -1,7 +1,6 @@
 package chocopy.pa1;
 import java_cup.runtime.*;
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.Iterator;
 import java.util.ArrayList;
 
 %%
@@ -40,14 +39,8 @@ import java.util.ArrayList;
     private int string_line = 0, string_column = 0;
     private StringBuilder string = new StringBuilder(); /* verificar */
 
-    private ArrayList<Integer> stack;
-    private boolean indentErrorUnchecked;
-
-    public ChocoPyLexer(java.io.Reader in) {
-    this.yyreset(in);
-    this.stack = new ArrayList<>(20);
-    this.indentErrorUnchecked = true;
-    }
+    private ArrayList<Integer> stack = new ArrayList<Integer>(20); 
+    private boolean indentErrorUnchecked = true;
 
     /** Return a terminal symbol of syntactic category TYPE and no
      *  semantic value at the current source location. */
@@ -63,53 +56,26 @@ import java.util.ArrayList;
             new ComplexSymbolFactory.Location(yyline + 1,yycolumn + yylength()),
             value);
     }
-    private Deque<Integer> stack;
-    public ChocoPyLexer(java.io.Reader in) {
-        this.yyreset(in);
-        this.stack = new ArrayDeque<>(20);
-        this.indentErrorUnchecked = true;
+    private void push(int indent){
+        stack.add(indent);
     }
-    private void push(int indent) {
-        stack.push(indent);
+    private int pop(){
+        if(stack.isEmpty()) return 0;
+        return stack.remove(stack.size() - 1);
     }
-
-    private int pop() {
-        return stack.isEmpty() ? 0 : stack.pop();
+    private int top(){
+        if(stack.isEmpty()) return 0;
+        return stack.get(stack.size() - 1);
     }
-
-    private int top() {
-        return stack.isEmpty() ? 0 : stack.peek();
+    private boolean find(int indent){
+      if(indent == 0) return true;
+      Iterator<Integer> it = stack.iterator();
+      while(it.hasNext()){
+         if(it.next() == indent)
+            return true;
+      }
+      return false;
     }
-
-    private boolean find(int indent) {
-        return indent == 0 || stack.contains(indent);
-    }
-    private boolean isDedent() {
-    return top() > currIndent;
-    }
-    private boolean isIndent() {
-        return top() < currIndent;
-    }
-    private Symbol handleDedent() {
-        pop();
-        if (top() < currIndent) {
-            currIndent = top();
-            return makeSymbol("<bad indentation>", ChocoPyTokens.UNRECOGNIZED);
-        }
-        return makeSymbol(ChocoPyTokens.terminalNames[ChocoPyTokens.DEDENT], ChocoPyTokens.DEDENT);
-    }
-
-    private Symbol handleIndent() {
-        push(currIndent);
-        return makeSymbol(ChocoPyTokens.terminalNames[ChocoPyTokens.INDENT], ChocoPyTokens.INDENT);
-    }
-
-    private Symbol makeSymbol(String name, int token) {
-        return symbolFactory.newSymbol(name, token,
-            new ComplexSymbolFactory.Location(yyline + 1, yycolumn - 1),
-            new ComplexSymbolFactory.Location(yyline + 1, yycolumn + yylength()),
-            currIndent);
-}
 %}
 
 /* === Macros === */
@@ -137,19 +103,35 @@ Comment = #[^\r\n]*
   {Comment}           { /* ignora */ }
 
   [^ \t\r\n#] {
-    yypushback(1);
+      yypushback(1);
+      if(top() > indent_current)
+      {   
+          pop();
+          if(top() < indent_current)
+          {
+            indent_current = top();
+            return symbolFactory.newSymbol("<bad indentation>", ChocoPyTokens.UNRECOGNIZED,
+              new ComplexSymbolFactory.Location(yyline + 1, yycolumn - 1),
+              new ComplexSymbolFactory.Location(yyline + 1,yycolumn + yylength()),
+              indent_current);
+          }
+          return symbolFactory.newSymbol(ChocoPyTokens.terminalNames[ChocoPyTokens.DEDENT], ChocoPyTokens.DEDENT,
+            new ComplexSymbolFactory.Location(yyline + 1, yycolumn - 1),
+            new ComplexSymbolFactory.Location(yyline + 1,yycolumn + yylength()),
+            indent_current);
+      }
+      yybegin(YYAFTER);
+      if(top()< indent_current)
+      {   
 
-    if (isDedent()) {
-        return handleDedent();
-    }
 
-    yybegin(YYAFTER);
-
-    if (isIndent()) {
-        return handleIndent();
-    }
-}
-
+          push(indent_current);
+          return symbolFactory.newSymbol(ChocoPyTokens.terminalNames[ChocoPyTokens.INDENT], ChocoPyTokens.INDENT,
+            new ComplexSymbolFactory.Location(yyline + 1, yycolumn - 1),
+            new ComplexSymbolFactory.Location(yyline + 1,yycolumn + yylength()),
+            indent_current);
+      }
+  }
 }
 
 <YYAFTER>{
@@ -174,8 +156,8 @@ Comment = #[^\r\n]*
   "is"        { return symbol(ChocoPyTokens.IS); }
   "global"    { return symbol(ChocoPyTokens.GLOBAL); }
   "nonlocal"  { return symbol(ChocoPyTokens.NONLOCAL); }
-  "True"      { return symbol(ChocoPyTokens.TRUE); }
-  "False"     { return symbol(ChocoPyTokens.FALSE); }
+  "True"      { return symbol(ChocoPyTokens.BOOL, true); }
+  "False"     { return symbol(ChocoPyTokens.BOOL, false); }
   "None"      { return symbol(ChocoPyTokens.NONE); }
   "\"" {yybegin(STRING); string_line = yyline + 1; string_column = yycolumn + 1; string_current = "";}
 
@@ -198,6 +180,7 @@ Comment = #[^\r\n]*
   "-"     { return symbol(ChocoPyTokens.MINUS); }
   "*"     { return symbol(ChocoPyTokens.MULT); }
   "//"    { return symbol(ChocoPyTokens.INTDIV); }
+  "/"    { return symbol(ChocoPyTokens.DIV); }
   "%"     { return symbol(ChocoPyTokens.MOD); }
 
   /* === Delimitadores === */
