@@ -103,33 +103,35 @@ Comment = #[^\r\n]*
   {Comment}           { /* ignora */ }
 
   [^ \t\r\n#] {
-      yypushback(1);
-      if(top() > indent_current)
-      {   
+      yypushback(1);  // Caractere que não é espaço/tab/linha/comentário
+
+      int currentTop = top();
+
+      if (currentTop > indent_current) {
           pop();
-          if(top() < indent_current)
-          {
-            indent_current = top();
-            return symbolFactory.newSymbol("<bad indentation>", ChocoPyTokens.UNRECOGNIZED,
-              new ComplexSymbolFactory.Location(yyline + 1, yycolumn - 1),
-              new ComplexSymbolFactory.Location(yyline + 1,yycolumn + yylength()),
-              indent_current);
+          if (top() < indent_current) {
+              // Indentação errada entre dois níveis conhecidos
+              indent_current = top();
+              return symbolFactory.newSymbol("<bad indentation>", ChocoPyTokens.UNRECOGNIZED,
+                  new ComplexSymbolFactory.Location(yyline + 1, yycolumn - 1),
+                  new ComplexSymbolFactory.Location(yyline + 1, yycolumn + yylength()),
+                  indent_current);
           }
+          // Retorna DEDENT
           return symbolFactory.newSymbol(ChocoPyTokens.terminalNames[ChocoPyTokens.DEDENT], ChocoPyTokens.DEDENT,
-            new ComplexSymbolFactory.Location(yyline + 1, yycolumn - 1),
-            new ComplexSymbolFactory.Location(yyline + 1,yycolumn + yylength()),
-            indent_current);
+              new ComplexSymbolFactory.Location(yyline + 1, yycolumn - 1),
+              new ComplexSymbolFactory.Location(yyline + 1, yycolumn + yylength()),
+              indent_current);
       }
+
       yybegin(YYAFTER);
-      if(top()< indent_current)
-      {   
 
-
+      if (currentTop < indent_current) {
           push(indent_current);
           return symbolFactory.newSymbol(ChocoPyTokens.terminalNames[ChocoPyTokens.INDENT], ChocoPyTokens.INDENT,
-            new ComplexSymbolFactory.Location(yyline + 1, yycolumn - 1),
-            new ComplexSymbolFactory.Location(yyline + 1,yycolumn + yylength()),
-            indent_current);
+              new ComplexSymbolFactory.Location(yyline + 1, yycolumn - 1),
+              new ComplexSymbolFactory.Location(yyline + 1, yycolumn + yylength()),
+              indent_current);
       }
   }
 }
@@ -204,15 +206,16 @@ Comment = #[^\r\n]*
 }
 
 <<EOF>> {
-    if (!stack.isEmpty()) {
-        int lastIndent = pop();
-        // Reprocessamento até esvaziar a pilha
-        if (!stack.isEmpty()) {
-            yypushback(1);
-        }
-        return symbol(ChocoPyTokens.DEDENT, lastIndent);
+  // Processa DEDENTs 
+  if (!stack.isEmpty()) {
+    int lastIndent = pop();
+    // Se ainda há níveis na pilha, continua processando
+  if (!stack.isEmpty()) {
+      yypushback(1); // Nova chamada ao EOF
     }
-    return symbol(ChocoPyTokens.EOF);
+  return symbol(ChocoPyTokens.DEDENT, lastIndent);
+  }
+  return symbol(ChocoPyTokens.EOF);
 }
 
 /* Token não reconhecido */
