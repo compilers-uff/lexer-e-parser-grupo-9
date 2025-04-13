@@ -156,8 +156,8 @@ Comment = #[^\r\n]*
   "is"        { return symbol(ChocoPyTokens.IS); }
   "global"    { return symbol(ChocoPyTokens.GLOBAL); }
   "nonlocal"  { return symbol(ChocoPyTokens.NONLOCAL); }
-  "True"      { return symbol(ChocoPyTokens.BOOL, true); }
-  "False"     { return symbol(ChocoPyTokens.BOOL, false); }
+  "True"      { return symbol(ChocoPyTokens.TRUE); }
+  "False"     { return symbol(ChocoPyTokens.FALSE); }
   "None"      { return symbol(ChocoPyTokens.NONE); }
   "\""        { yybegin(STRING); string_line = yyline + 1; string_column = yycolumn + 1; string_current = "";}
 

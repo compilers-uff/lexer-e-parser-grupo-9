@@ -166,7 +166,8 @@ action code {:
  */
 
 terminal String DEF, CLASS, IF, ELSE, ELIF, WHILE, FOR, IN, RETURN, PASS, NOT, AND, OR, IS, GLOBAL, NONLOCAL;
-terminal Boolean BOOL;
+
+terminal TRUE, FALSE;
 terminal String EQ, EQEQ, NOTEQ, NONE, LT, LTE, GT, GTE;
 terminal String PLUS, UMINUS, MINUS, MULT, INTDIV, DIV, MOD;
 terminal String DOT, COLON, COMMA, LPAREN, RPAREN, LBRACK, RBRACK, ARROW;
@@ -357,11 +358,11 @@ block ::= NEWLINE INDENT stmt_list:sl DEDENT                 {: RESULT = sl; :};
 
 /* literal */
 literal ::= NONE:n                                        {: RESULT = new NoneLiteral(nxleft, nxright); :}
-          | BOOL:b                                        {: RESULT = new BooleanLiteral(bxleft, bxright, b); :}
+          | TRUE:t                                        {: RESULT = new BooleanLiteral(txleft, txright, true); :}
+          | FALSE:f                                       {: RESULT = new BooleanLiteral(fxleft, fxright, false); :}
           | NUMBER:n                                      {: RESULT = new IntegerLiteral(nxleft, nxright, n); :}
           | STRING:s                                      {: RESULT = new StringLiteral(sxleft, sxright, s); :}
           ;
-  
   
 /* expr */ 
 expr ::= cexpr:ce                                         {: RESULT = ce; :}
