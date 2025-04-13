@@ -38,7 +38,7 @@ import java.util.ArrayList;
     private String string_current = "";
     private int string_line = 0, string_column = 0;
 
-    private ArrayList<Integer> stack = new ArrayList<Integer>(20); 
+    private ArrayList<Integer> stack = new ArrayList<Integer>(); 
     private boolean indentErrorUnchecked = true;
 
     /** Return a terminal symbol of syntactic category TYPE and no
@@ -56,7 +56,7 @@ import java.util.ArrayList;
             value);
     }
     private void push(int indent){
-        stack.add(indent);
+      stack.add(indent);
     }
     private int pop(){
         if(stack.isEmpty()) return 0;
@@ -89,8 +89,8 @@ Comment = #[^\r\n]*
 <YYINITIAL> {
 
   /* === Espaços e Comentários === */
-  {WhiteSpace}        {
-    if (yytext() == "\t")
+  {WhiteSpace} {
+    if (yytext().equals("\t"))
       indent_current += 8;
     else
       indent_current += 1;
@@ -203,9 +203,16 @@ Comment = #[^\r\n]*
                                    new ComplexSymbolFactory.Location(yyline + 1,yycolumn + yylength()), string_current); }
 }
 
-<<EOF>> { if(!stack.isEmpty()){ 
-    return symbol(ChocoPyTokens.DEDENT, pop());} 
-    return symbol(ChocoPyTokens.EOF); 
+<<EOF>> {
+    if (!stack.isEmpty()) {
+        int lastIndent = pop();
+        // Reprocessamento até esvaziar a pilha
+        if (!stack.isEmpty()) {
+            yypushback(1);
+        }
+        return symbol(ChocoPyTokens.DEDENT, lastIndent);
+    }
+    return symbol(ChocoPyTokens.EOF);
 }
 
 /* Token não reconhecido */
