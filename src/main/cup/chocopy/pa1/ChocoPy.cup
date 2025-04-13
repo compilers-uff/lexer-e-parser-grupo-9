@@ -127,10 +127,10 @@ action code {:
         return new ArrayList<T>();
     }
     class FuncBody {
-        public List<Declaration> fb;
+        public List<Declaration> fbd;
         public List<Stmt> sl;
-        public FuncBody(List<Declaration> fb, List<Stmt> sl){
-            this.fb = fb;
+        public FuncBody(List<Declaration> fbd, List<Stmt> sl){
+            this.fbd = fbd;
             this.sl = sl;
         }
     }
@@ -169,9 +169,13 @@ terminal String DEF, CLASS, IF, ELSE, ELIF, WHILE, FOR, IN, RETURN, PASS, NOT, A
 terminal Boolean BOOL;
 terminal String EQ, EQEQ, NOTEQ, NONE, LT, LTE, GT, GTE;
 terminal String PLUS, UMINUS, MINUS, MULT, INTDIV, DIV, MOD;
-terminal String DOT, COLON, COMMA, LPAREN, RPAREN, LBRACK, RBRACK, ARROW, INDENT, DEDENT;
+terminal String DOT, COLON, COMMA, LPAREN, RPAREN, LBRACK, RBRACK, ARROW;
 terminal NEWLINE;
+terminal INDENT, DEDENT;
+
 terminal String UNRECOGNIZED;
+
+terminal String LAMBDA, IMPORT;
 
 terminal Integer NUMBER;
 terminal String STRING;
@@ -214,7 +218,7 @@ non terminal FuncBody          fun_body;
 
 precedence left OR;
 precedence left AND;
-precedence right NOT;
+precedence left NOT;
 precedence nonassoc EQEQ, NOTEQ, LT, LTE, GT, GTE, IS;
 precedence left PLUS, MINUS;
 precedence left MULT, DIV, UMINUS, INTDIV, MOD;

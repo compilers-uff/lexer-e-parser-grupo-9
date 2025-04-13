@@ -37,7 +37,6 @@ import java.util.ArrayList;
     private int indent_current = 0;
     private String string_current = "";
     private int string_line = 0, string_column = 0;
-    private StringBuilder string = new StringBuilder(); /* verificar */
 
     private ArrayList<Integer> stack = new ArrayList<Integer>(20); 
     private boolean indentErrorUnchecked = true;
@@ -79,7 +78,7 @@ import java.util.ArrayList;
 %}
 
 /* === Macros === */
-WhiteSpace = [ \t]+
+WhiteSpace = [ \t]
 LineBreak  = \r\n|[\r\n]
 IntegerLiteral = 0|[1-9][0-9]*
 StringLiteral = ([^\"\\]|(\\\")|(\\t)|(\\r)|(\\n)|(\\\\))+ 
@@ -92,14 +91,15 @@ Comment = #[^\r\n]*
   /* === Espaços e Comentários === */
   {WhiteSpace}        {
     if (yytext() == "\t")
-      indent_current += 4;
+      indent_current += 8;
     else
       indent_current += 1;
   }
 
   {LineBreak} { 
-    return symbol(ChocoPyTokens.NEWLINE); 
+    indent_current = 0;
   }
+
   {Comment}           { /* ignora */ }
 
   [^ \t\r\n#] {
@@ -135,7 +135,7 @@ Comment = #[^\r\n]*
 }
 
 <YYAFTER>{
-  {LineBreak} { yybegin(YYINITIAL); indent_current = 0; indentErrorUnchecked = true; return symbol(ChocoPyTokens.NEWLINE);}
+  {LineBreak}         { yybegin(YYINITIAL); indent_current = 0; indentErrorUnchecked = true; return symbol(ChocoPyTokens.NEWLINE);}
   /* === Espaços e Comentários === */
   {WhiteSpace}        { /* ignora */ }
   {Comment}           { /* ignora */ }
@@ -159,7 +159,7 @@ Comment = #[^\r\n]*
   "True"      { return symbol(ChocoPyTokens.BOOL, true); }
   "False"     { return symbol(ChocoPyTokens.BOOL, false); }
   "None"      { return symbol(ChocoPyTokens.NONE); }
-  "\"" {yybegin(STRING); string_line = yyline + 1; string_column = yycolumn + 1; string_current = "";}
+  "\""        { yybegin(STRING); string_line = yyline + 1; string_column = yycolumn + 1; string_current = "";}
 
   /* === Literais === */
   {IntegerLiteral}    { return symbol(ChocoPyTokens.NUMBER, Integer.parseInt(yytext())); }
