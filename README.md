@@ -52,10 +52,10 @@ Membros do Grupo: Felipe Mendes Salles, Fernando Moreira e Lucas Lopes
 
 ## Respostas da Entrega 1
 
-Que estratégia você usou para emitir tokens INDENT e DEDENT corretamente? Mencione o nome do arquivo e o(s) número(s) da(s) linha(s) para a parte principal da sua solução.
+**Que estratégia você usou para emitir tokens INDENT e DEDENT corretamente? Mencione o nome do arquivo e o(s) número(s) da(s) linha(s) para a parte principal da sua solução.**
 
 R: A estratégia para emissão correta dos tokens INDENT e DEDENT no arquivo ChocoPyLexer.jflex (linhas 85-123 e 195-204) baseia-se em uma implementação de pilha que avalia os níveis de indentação. Durante a análise léxica no estado YYINITIAL, o lexer calcula a indentação atual (indent_current) contando espaços (1 por caractere) e tabs (8 espaços). Quando encontra um caractere não-branco, compara a indentação atual com o topo da pilha (currentTop): se maior, empilha o novo nível e emite INDENT; se menor, desempilha e emite DEDENT, com verificação de consistência para detectar indentação inválida. No final do arquivo (<<EOF>>), a estratégia desempilha todos os níveis restantes, emitindo DEDENTs pendentes para fechar blocos abertos, garantindo que a estrutura do código esteja corretamente aninhada mesmo sem delimitadores explícitos. A pilha mantém o histórico de níveis válidos, enquanto as transições entre YYINITIAL e YYAFTER controlam quando a indentação deve ser verificada.
 
-Como sua solução ao item 1 se relaciona ao descrito na seção 3.1 do manual de referência de ChocoPy? (Arquivo chocopy_language_reference.pdf.)
+**Como sua solução ao item 1 se relaciona ao descrito na seção 3.1 do manual de referência de ChocoPy? (Arquivo chocopy_language_reference.pdf.)**S
 
 R: Nossa solução implementa os requisitos do manual do ChocoPy sobre indentação, utilizando uma pilha para gerenciar os níveis de indentação conforme especificado. Assim como descrito no manual, ao detectar um aumento na indentação em relação ao topo da pilha, um token INDENT é emitido e o novo nível é empilhado (linhas 108-113), enquanto uma diminuição gera tokens DEDENT até alcançar um nível válido (linhas 88-102), incluindo o tratamento especial para TABS como 8 espaços (linhas 68-71). O fechamento de blocos no final do arquivo (linhas 195-204) também segue estritamente a especificação, emitindo DEDENTs para todos os níveis pendentes na pilha, garantindo que todas as estruturas indentadas sejam corretamente finalizadas, exatamente como especifica o manual de referência.
