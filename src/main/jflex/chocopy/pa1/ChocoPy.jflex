@@ -81,7 +81,7 @@ import java.util.ArrayList;
 WhiteSpace = [ \t]
 LineBreak  = \r\n|[\r\n]
 IntegerLiteral = 0|[1-9][0-9]*
-StringLiteral = ([^\"\\]|(\\\")|(\\t)|(\\r)|(\\n)|(\\\\))+ 
+StringLiteral = \"(\\.|[^\"\\])*\"
 Identifier = [a-zA-Z_][a-zA-Z0-9_]*
 Comment = #[^\r\n]*
 %%
@@ -161,12 +161,13 @@ Comment = #[^\r\n]*
   "True"      { return symbol(ChocoPyTokens.TRUE); }
   "False"     { return symbol(ChocoPyTokens.FALSE); }
   "None"      { return symbol(ChocoPyTokens.NONE); }
-  "\""        { yybegin(STRING); string_line = yyline + 1; string_column = yycolumn + 1; string_current = "";}
 
   /* === Literais === */
   {IntegerLiteral}    { return symbol(ChocoPyTokens.NUMBER, Integer.parseInt(yytext())); }
-
-
+  {StringLiteral}     {return symbolFactory.newSymbol(ChocoPyTokens.terminalNames[ChocoPyTokens.STRING], ChocoPyTokens.STRING,
+                                                      new ComplexSymbolFactory.Location(yyline + 1, yycolumn + 1),
+                                                      new ComplexSymbolFactory.Location(yyline + 1,yycolumn + yylength()), 
+                                                      yytext().replace("\"", "")); }
   /* === Identificadores === */
   {Identifier}        { return symbol(ChocoPyTokens.IDENTIFIER, yytext()); }
 
@@ -197,13 +198,6 @@ Comment = #[^\r\n]*
 
 }
 
-<STRING>{
-  {StringLiteral}              {string_current += yytext(); }
-  \\$                          {/* fim */}
-  "\""                         { yybegin(YYAFTER); return symbolFactory.newSymbol(ChocoPyTokens.terminalNames[ChocoPyTokens.STRING], ChocoPyTokens.STRING,
-                                   new ComplexSymbolFactory.Location(string_line, string_column),
-                                   new ComplexSymbolFactory.Location(yyline + 1,yycolumn + yylength()), string_current); }
-}
 
 <<EOF>> {
   // Processa DEDENTs 
