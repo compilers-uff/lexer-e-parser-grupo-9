@@ -10,7 +10,7 @@ import java.util.ArrayList;
 %unicode
 %line
 %column
-%states YYAFTER, STRING
+%states YYAFTER
 %class ChocoPyLexer
 %public
 
@@ -137,10 +137,13 @@ Comment = #[^\r\n]*
 }
 
 <YYAFTER>{
+
   {LineBreak}         { yybegin(YYINITIAL); indent_current = 0; indentErrorUnchecked = true; return symbol(ChocoPyTokens.NEWLINE);}
+
   /* === Espaços e Comentários === */
   {WhiteSpace}        { /* ignora */ }
   {Comment}           { /* ignora */ }
+
   /* === Palavras-chave === */
   "def"       { return symbol(ChocoPyTokens.DEF); }
   "class"     { return symbol(ChocoPyTokens.CLASS); }
@@ -168,6 +171,7 @@ Comment = #[^\r\n]*
                                                       new ComplexSymbolFactory.Location(yyline + 1, yycolumn + 1),
                                                       new ComplexSymbolFactory.Location(yyline + 1,yycolumn + yylength()), 
                                                       yytext().replace("\"", "")); }
+  
   /* === Identificadores === */
   {Identifier}        { return symbol(ChocoPyTokens.IDENTIFIER, yytext()); }
 
@@ -198,8 +202,8 @@ Comment = #[^\r\n]*
 
 }
 
-
 <<EOF>> {
+
   // Processa DEDENTs 
   if (!stack.isEmpty()) {
     int lastIndent = pop();
