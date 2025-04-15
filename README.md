@@ -48,14 +48,22 @@ To sync with updates upstream:
 
 ## Membros
 
-Membros do Grupo: Felipe Mendes Salles, Fernando Moreira e Lucas Lopes
+- Team member 1: Felipe Mendes Salles
+
+- Team member 2: Fernando Moreira da Silva Filho 
+
+- Team member 3: Lucas Lopes de Moraes Pinto
 
 ## Respostas da Entrega 1
 
-**Que estratégia você usou para emitir tokens INDENT e DEDENT corretamente? Mencione o nome do arquivo e o(s) número(s) da(s) linha(s) para a parte principal da sua solução.**
+**###1- Que estratégia você usou para emitir tokens INDENT e DEDENT corretamente? Mencione o nome do arquivo e o(s) número(s) da(s) linha(s) para a parte principal da sua solução.**
 
 R: A estratégia para emissão correta dos tokens INDENT e DEDENT no arquivo ChocoPyLexer.jflex (linhas 89-137 e 205-217) baseia-se em uma implementação de pilha que avalia os níveis de indentação. Durante a análise léxica no estado YYINITIAL, o lexer calcula a indentação atual (indent_current) contando espaços (1 por caractere) e tabs (8 espaços). Quando encontra um caractere não-branco, compara a indentação atual com o topo da pilha (currentTop): se maior, empilha o novo nível e emite INDENT; se menor, desempilha e emite DEDENT, com verificação de consistência para detectar indentação inválida. No final do arquivo (<<EOF>>), a estratégia desempilha todos os níveis restantes, emitindo DEDENTs pendentes para fechar blocos abertos, garantindo que a estrutura do código esteja corretamente aninhada mesmo sem delimitadores explícitos. A pilha mantém o histórico de níveis válidos, enquanto as transições entre YYINITIAL e YYAFTER controlam quando a indentação deve ser verificada.
 
-**Como sua solução ao item 1 se relaciona ao descrito na seção 3.1 do manual de referência de ChocoPy? (Arquivo chocopy_language_reference.pdf.)**
+**###2- Como sua solução ao item 1 se relaciona ao descrito na seção 3.1 do manual de referência de ChocoPy? (Arquivo chocopy_language_reference.pdf.)**
 
 R: Nossa solução implementa os requisitos do manual do ChocoPy sobre indentação, utilizando uma pilha para gerenciar os níveis de indentação conforme especificado. Assim como descrito no manual, ao detectar um aumento na indentação em relação ao topo da pilha, um token INDENT é emitido e o novo nível é empilhado (linhas 129-137), enquanto uma diminuição gera tokens DEDENT até alcançar um nível válido (linhas 110-125), incluindo o tratamento especial para TABS como 8 espaços (linhas 92-96). O fechamento de blocos no final do arquivo (linhas 205-217) também segue estritamente a especificação, emitindo DEDENTs para todos os níveis pendentes na pilha, garantindo que todas as estruturas indentadas sejam corretamente finalizadas, exatamente como especifica o manual de referência.
+
+**###3 Qual foi a característica mais difícil da linguagem (não incluindo identação) neste projeto? Por que foi um desafio? Mencione o nome do arquivo e o(s) número(s) da(s) linha(s) para a parte principal de a sua solução.**
+
+R: Consideramos que a característica mais difícil, foi sem dúvidas o tratamento do if, elif e else, para garantir a estrutura de um if com vários elif e else fossem corretamente transformadas em uma sequência de nós IfStmt aninhados. Isso não é trivial de expressar gramaticamente, pois exige uma recursividade cuidadosa de diferenciar um elif (um novo IfStmt) e um else (finaliza a cadeia condicional). Isso tudo foi no arquivo ChocoPy.cup, o if (linhas 292-296), else (linhas 299-302) e o elif (linha 300).
