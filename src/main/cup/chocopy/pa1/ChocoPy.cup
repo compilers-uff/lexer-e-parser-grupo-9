@@ -294,7 +294,7 @@ stmt ::= simple_stmt:s NEWLINE                                            {: RES
 
 
 else_body ::= ELSE:el COLON block:b                                       {: RESULT = b; :}
-            |  ELIF:el expr:cond COLON block:b else_body:elb              {: RESULT = single(new IfStmt(elxleft, elbxright, cond, b, elb)); :}
+            | ELIF:el expr:cond COLON block:b else_body:elb               {: RESULT = single(new IfStmt(elxleft, elbxright, cond, b, elb)); :}
             |                                                             {: RESULT = empty(); :}
             ;
     
@@ -307,11 +307,11 @@ simple_stmt ::= PASS:p                                                    {: RES
               ;
             
             
-assign_stmt ::= target_list:tl EQ expr:e                                  {: RESULT = new AssignStmt(getLeft(tl), exright, tl, e); :}
-              ;
+assign_stmt ::= target_list:tl EQ expr:e                                  {: RESULT = new AssignStmt(getLeft(tl), exright, tl, e); :};
+
 
 target_list ::= target:t                                                  {: RESULT = single(t); :}
-              | target_list:tl EQ target:t                             {: RESULT = combine(tl, t); :};
+              | target_list:tl EQ target:t                                {: RESULT = combine(tl, t); :};
         
             
 block ::= NEWLINE INDENT stmt_list:sl DEDENT                              {: RESULT = sl; :};
@@ -324,6 +324,7 @@ literal ::= NONE:n                                                        {: RES
           | STRING:s                                                      {: RESULT = new StringLiteral(sxleft, sxright, s); :}
           ;
   
+
 expr ::= cexpr:ce                                                         {: RESULT = ce; :}
        | NOT:n expr:exp                                                   {: RESULT = new UnaryExpr(nxleft, expxright, n, exp); :}
        | expr:e1 AND:a expr:e2                                            {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, a, e2); :}
@@ -360,18 +361,17 @@ pexpr ::= identifier:id                                                   {: RES
         | MINUS:m pexpr:p                                                 {: RESULT = new UnaryExpr(mxleft, pxright, m, p); :} %prec UMINUS
         ;
         
+
 expr_list ::= expr:e                                                      {: RESULT = single(e); :}
             | expr_list:el COMMA expr:e                                   {: RESULT = combine(el, e); :}
             |                                                             {: RESULT = new ArrayList<Expr>(); :}
             ;
 
 
-member_expr ::= pexpr:p DOT identifier:id                                 {: RESULT = new MemberExpr(pxleft, idxright, p, id); :}
-              ;
+member_expr ::= pexpr:p DOT identifier:id                                 {: RESULT = new MemberExpr(pxleft, idxright, p, id); :};
 
 
-index_expr ::= pexpr:p LBRACK expr:e RBRACK:rbrack                        {: RESULT = new IndexExpr(pxleft, rbrackxright, p, e); :}
-             ;
+index_expr ::= pexpr:p LBRACK expr:e RBRACK:rbrack                        {: RESULT = new IndexExpr(pxleft, rbrackxright, p, e); :};
     
     
 target ::= identifier:id                                                  {: RESULT = id; :}
@@ -379,6 +379,7 @@ target ::= identifier:id                                                  {: RES
          | index_expr:i                                                   {: RESULT = i; :}
          ;
               
+
 identifier ::= IDENTIFIER:idStr                                           {: RESULT = new Identifier(idStrxleft, idStrxright, idStr); :};
 
 
