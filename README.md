@@ -49,10 +49,15 @@ To sync with updates upstream:
 ## Membros
 
 - Team member 1: Felipe Mendes Salles
+- Horas:
 
-- Team member 2: Fernando Moreira da Silva Filho 
+- Team member 2: Fernando Moreira da Silva Filho
+- Horas: 30 horas
 
 - Team member 3: Lucas Lopes de Moraes Pinto
+- Horas:
+
+- Horas totais: 
 
 ## Respostas da Entrega 1
 
