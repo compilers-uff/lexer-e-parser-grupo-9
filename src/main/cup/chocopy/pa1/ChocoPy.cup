@@ -169,7 +169,7 @@ non terminal Program           program;
 non terminal List<Declaration> program_head, class_body, class_body_defs, fun_body_decs;
 non terminal List<Stmt>        stmt_list, opt_stmt_list, block, else_body;
 non terminal Stmt              stmt, simple_stmt;
-non terminal Expr              expr, pexpr, cexpr;
+non terminal Expr              expr, cexpr;
 non terminal VarDef            var_def;
 non terminal ClassDef          class_def;
 non terminal FuncDef           fun_def;
@@ -182,7 +182,7 @@ non terminal GlobalDecl        global_decl;
 non terminal NonLocalDecl      nonlocal_decl;
 non terminal List<Expr>        expr_list, target_list;
 non terminal Expr              target;
-non terminal AssignStmt        assign_stmt;
+non terminal List<Expr>        assign_stmt;
 non terminal MemberExpr        member_expr;
 non terminal IndexExpr         index_expr;
 
@@ -196,7 +196,7 @@ precedence left PLUS, MINUS;
 precedence left MULT, DIV, UMINUS, INTDIV, MOD;
 precedence left DOT, COMMA, LBRACK, RBRACK;
 precedence right IF, ELSE;
-
+precedence left LPAREN,RPAREN;
 
 /* The start symbol. */
 start with program;
@@ -226,8 +226,7 @@ opt_stmt_list ::=                                                         {: RES
                 ;
 
 
-class_def ::= CLASS:c identifier:id LPAREN identifier:parentId RPAREN COLON NEWLINE INDENT class_body:cb DEDENT   {: 
-              RESULT = new ClassDef(cxleft, cbxright, id, parentId, cb); :}; 
+class_def ::= CLASS:c identifier:id LPAREN identifier:parentId RPAREN COLON NEWLINE INDENT class_body:cb DEDENT   {: RESULT = new ClassDef(cxleft, cbxright, id, parentId, cb); :}; 
 
 
 class_body ::= PASS NEWLINE                                               {: RESULT = empty(); :}
@@ -244,9 +243,7 @@ class_body_defs ::= class_body_defs:defs var_def:vd                       {: RES
 
 
 fun_def ::= DEF:def identifier:id LPAREN typed_vars:params RPAREN ret_type:rt COLON:col NEWLINE INDENT fun_body_decs:fbd stmt_list:sl DEDENT       
-            {: TypeAnnotation _rt = rt; if ((rt instanceof ClassType) && 
-            ((ClassType)rt).className == "<None>") _rt = new ClassType( colxright, colxright, "<None>");
-            RESULT = new FuncDef(defxleft, slxright, id, params, _rt, fbd, sl); :}
+            {: TypeAnnotation _rt = rt;if((rt instanceof ClassType) && ((ClassType)rt).className == "<None>") _rt = new ClassType( colxright, colxright, "<None>");RESULT = new FuncDef(defxleft, slxright, id, params, _rt, fbd, sl); :}
             ;
 
 
@@ -306,11 +303,11 @@ simple_stmt ::= PASS:p                                                    {: RES
               | expr:e                                                    {: RESULT = new ExprStmt(exleft, exright, e); :}
               | RETURN:r expr:e                                           {: RESULT = new ReturnStmt(rxleft, exright, e); :}
               | RETURN:r                                                  {: RESULT = new ReturnStmt(rxleft, rxright, null); :}
-              | assign_stmt:st                                            {: RESULT = st; :}
+              | target_list:tl EQ expr:e                                  {: RESULT = new AssignStmt(tlxleft, exright, tl, e); :}
               ;
             
             
-assign_stmt ::= target_list:tl EQ expr:e                                  {: RESULT = new AssignStmt(getLeft(tl), exright, tl, e); :};
+//sign_stmt ::= target_list:tl EQ expr:e                                  {: RESULT = new AssignStmt(getLeft(tl), exright, tl, e); :};
 
 
 target_list ::= target:t                                                  {: RESULT = single(t); :}
@@ -337,17 +334,7 @@ expr ::= cexpr:ce                                                         {: RES
        ;
 
 
-cexpr ::= pexpr:pe                                                        {: RESULT = pe; :}
-        | pexpr:p1 EQEQ:co cexpr:p2                                       {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
-        | pexpr:p1 NOTEQ:co cexpr:p2                                      {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
-        | pexpr:p1 LTE:co cexpr:p2                                        {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
-        | pexpr:p1 GTE:co cexpr:p2                                        {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
-        | pexpr:p1 LT:co cexpr:p2                                         {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
-        | pexpr:p1 GT:co cexpr:p2                                         {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
-        ;
-
-
-pexpr ::= identifier:id                                                   {: RESULT = id; :}
+cexpr ::= identifier:id                                                   {: RESULT = id; :}
         | literal:l                                                       {: RESULT = l; :}
         | LBRACK:lbrack expr_list:l RBRACK:rbrack                         {: RESULT = new ListExpr(lbrackxleft, rbrackxright, l); :}
         | LPAREN:lparen expr:e RPAREN:rparen                              {: RESULT = e; :}
@@ -355,13 +342,19 @@ pexpr ::= identifier:id                                                   {: RES
         | index_expr:i                                                    {: RESULT = i; :}
         | member_expr:m LPAREN expr_list:l RPAREN:rparen                  {: RESULT = new MethodCallExpr(mxleft, rparenxright, m, l); :}
         | identifier:id LPAREN expr_list:l RPAREN:rparen                  {: RESULT = new CallExpr(idxleft, rparenxright, id, l); :}
-        | pexpr:p1 PLUS:bo pexpr:p2                                       {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
-        | pexpr:p1 MINUS:bo pexpr:p2                                      {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
-        | pexpr:p1 MULT:bo pexpr:p2                                       {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
-        | pexpr:p1 DIV:bo pexpr:p2                                        {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
-        | pexpr:p1 MOD:bo pexpr:p2                                        {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
-        | pexpr:p1 INTDIV:bo pexpr:p2                                     {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
-        | MINUS:m pexpr:p                                                 {: RESULT = new UnaryExpr(mxleft, pxright, m, p); :} %prec UMINUS
+        | cexpr:p1 PLUS:bo cexpr:p2                                       {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
+        | cexpr:p1 MINUS:bo cexpr:p2                                      {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
+        | cexpr:p1 MULT:bo cexpr:p2                                       {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
+        | cexpr:p1 DIV:bo cexpr:p2                                        {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
+        | cexpr:p1 MOD:bo cexpr:p2                                        {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
+        | cexpr:p1 INTDIV:bo cexpr:p2                                     {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
+        | cexpr:p1 EQEQ:co cexpr:p2                                       {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
+        | cexpr:p1 NOTEQ:co cexpr:p2                                      {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
+        | cexpr:p1 LTE:co cexpr:p2                                        {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
+        | cexpr:p1 GTE:co cexpr:p2                                        {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
+        | cexpr:p1 LT:co cexpr:p2                                         {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
+        | cexpr:p1 GT:co cexpr:p2                                         {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
+        | MINUS:m cexpr:p                                                 {: RESULT = new UnaryExpr(mxleft, pxright, m, p); :} %prec UMINUS
         ;
         
 
@@ -371,10 +364,10 @@ expr_list ::= expr:e                                                      {: RES
             ;
 
 
-member_expr ::= pexpr:p DOT identifier:id                                 {: RESULT = new MemberExpr(pxleft, idxright, p, id); :};
+member_expr ::= cexpr:p DOT identifier:id                                 {: RESULT = new MemberExpr(pxleft, idxright, p, id); :};
 
 
-index_expr ::= pexpr:p LBRACK expr:e RBRACK:rbrack                        {: RESULT = new IndexExpr(pxleft, rbrackxright, p, e); :};
+index_expr ::= cexpr:p LBRACK expr:e RBRACK:rbrack                        {: RESULT = new IndexExpr(pxleft, rbrackxright, p, e); :};
     
     
 target ::= identifier:id                                                  {: RESULT = id; :}
