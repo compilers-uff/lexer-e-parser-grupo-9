@@ -141,7 +141,6 @@ action code {:
  * semantic value of type <type> for these symbols that may be referenced
  * in actions ( {: ... :} ).
  */
-
 terminal String DEF, CLASS, IF, ELSE, ELIF, WHILE, FOR, IN, RETURN, PASS, NOT, AND, OR, IS, GLOBAL, NONLOCAL;
 
 terminal TRUE, FALSE;
@@ -166,9 +165,8 @@ terminal String IDENTIFIER;
  *     non terminal <type> <identifier1>, ..., <identifiern>; 
  * defines the listed nonterminal identifier symbols to have semantic values
  * of type <type>. */
-
 non terminal Program           program;
-non terminal List<Declaration> defs, program_head, opt_program_head, class_body, class_body_defs, fun_body_decs;
+non terminal List<Declaration> program_head, class_body, class_body_defs, fun_body_decs;
 non terminal List<Stmt>        stmt_list, opt_stmt_list, block, else_body;
 non terminal Stmt              stmt, simple_stmt;
 non terminal Expr              expr, pexpr, cexpr;
@@ -176,7 +174,6 @@ non terminal VarDef            var_def;
 non terminal ClassDef          class_def;
 non terminal FuncDef           fun_def;
 non terminal Literal           literal;
-non terminal StringLiteral     bin_op, comp_op;
 non terminal TypedVar          typed_var;
 non terminal TypeAnnotation    type, ret_type;
 non terminal Identifier        identifier;
@@ -187,11 +184,9 @@ non terminal List<Expr>        opt_target, expr_list;
 non terminal Expr              target;
 non terminal MemberExpr        member_expr;
 non terminal IndexExpr         index_expr;
-non terminal FuncBody          fun_body;
 
 /* Precedences (lowest to highest) for resolving what would otherwise be
  * ambiguities in the form of shift/reduce conflicts.. */
-
 precedence left OR;
 precedence left AND;
 precedence left NOT;
@@ -207,7 +202,6 @@ start with program;
 
 
 /*****  GRAMMAR RULES *****/
-
 program ::= program_head:d opt_stmt_list:s
           {: 
             ComplexSymbolFactory.Location left = d.isEmpty() ? getLeft(s) : getLeft(d);
@@ -217,27 +211,28 @@ program ::= program_head:d opt_stmt_list:s
           :}
           ;
 
+
 program_head ::= program_head:d var_def:vd                                {: RESULT = combine(d, vd); :}
                | program_head:d class_def:cd                              {: RESULT = combine(d, cd); :}
                | program_head:d fun_def:fd                                {: RESULT = combine(d, fd); :}
                | program_head:d error:e                                   {: RESULT = d; :}
                |                                                          {: RESULT = empty(); :}
                ;
-                
+
+
 opt_stmt_list ::=                                                         {: RESULT = empty(); :}
                 | stmt_list:s                                             {: RESULT = s; :}
                 ;
 
 
-/* class_def */
 class_def ::= CLASS:c identifier:id LPAREN identifier:parentId RPAREN COLON NEWLINE INDENT class_body:cb DEDENT   {: RESULT = new ClassDef(cxleft, cbxright, id, parentId, cb); :}; 
 
 
-/* class_body */
 class_body ::= PASS NEWLINE                                               {: RESULT = empty(); :}
              | class_body_defs:defs                                       {: RESULT = defs; :}
              ;
               
+
 class_body_defs ::= class_body_defs:defs var_def:vd                       {: RESULT = combine(defs, vd); :}
                   | class_body_defs:defs fun_def:fd                       {: RESULT = combine(defs, fd); :}
                   | class_body_defs:defs error                            {: RESULT = defs; :}
@@ -246,14 +241,15 @@ class_body_defs ::= class_body_defs:defs var_def:vd                       {: RES
                   ;
 
 
-/* fun_def */
 fun_def ::= DEF:def identifier:id LPAREN typed_vars:params RPAREN ret_type:rt COLON:col NEWLINE INDENT fun_body_decs:fbd stmt_list:sl DEDENT       
             {: TypeAnnotation _rt = rt;if((rt instanceof ClassType) && ((ClassType)rt).className == "<None>") _rt = new ClassType( colxright, colxright, "<None>");RESULT = new FuncDef(defxleft, slxright, id, params, _rt, fbd, sl); :}
             ;
 
+
 ret_type ::= ARROW type:t                                                 {: RESULT= t; :}
            |                                                              {: RESULT= new ClassType(null, null,"<None>"); :}
            ;
+
 
 typed_vars ::= typed_var:tv                                               {: RESULT= single(tv); :}
              | typed_vars:tvs COMMA typed_var:tv                          {: RESULT= combine(tvs, tv); :}
@@ -262,8 +258,6 @@ typed_vars ::= typed_var:tv                                               {: RES
              ; 
                   
              
-
-
 fun_body_decs ::= fun_body_decs:fbd  global_decl:gd                       {: RESULT= combine(fbd, gd); :}
                 | fun_body_decs:fbd  nonlocal_decl:nd                     {: RESULT= combine(fbd, nd); :} 
                 | fun_body_decs:fbd  var_def:vd                           {: RESULT= combine(fbd, vd); :}
@@ -273,30 +267,24 @@ fun_body_decs ::= fun_body_decs:fbd  global_decl:gd                       {: RES
                 ;
             
 
-/* typed_var */
 typed_var ::= identifier:id COLON type:t                                  {: RESULT = new TypedVar(idxleft, txright, id, t); :};
 
 
-/* type */
 type ::= identifier:id                                                    {: RESULT = new ClassType(idxleft, idxright, id.name); :}
        | STRING:str                                                       {: RESULT = new ClassType(strxleft, strxright, str); :}
        | LBRACK:lbrack type:t RBRACK:rbrack                               {: RESULT = new ListType(lbrackxleft, rbrackxright, t); :}
        ;
 
 
-/* global_decl */
 global_decl ::= GLOBAL:g identifier:id NEWLINE                            {: RESULT = new GlobalDecl(gxleft, idxright, id); :};
 
 
-/* nonlocal_decl */
 nonlocal_decl ::= NONLOCAL:n identifier:id NEWLINE                        {: RESULT = new NonLocalDecl(nxleft, idxright, id); :};
 
 
-/* var_def */
 var_def ::= typed_var:t EQ literal:l NEWLINE                              {: RESULT = new VarDef(txleft, lxright, t, l); :};
 
 
-/* stmt */
 stmt ::= simple_stmt:s NEWLINE                                            {: RESULT = s; :}
        | IF:i expr:cond COLON block:b else_body:elb                       {: RESULT = new IfStmt(ixleft, elbxright, cond, b, elb); :}
        | WHILE:wh expr:cond COLON block:b                                 {: RESULT = new WhileStmt(whxleft, bxright, cond, b); :}
@@ -310,7 +298,6 @@ else_body ::= ELSE:el COLON block:b                                       {: RES
             ;
     
     
-/* simple_stmt */
 simple_stmt ::= PASS:p                                                    {: RESULT = null; :}
               | expr:e                                                    {: RESULT = new ExprStmt(exleft, exright, e); :}
               | RETURN:r expr:e                                           {: RESULT = new ReturnStmt(rxleft, exright, e); :}
@@ -323,12 +310,10 @@ opt_target ::= opt_target:ot target:t EQ                                  {: RES
              | target:t EQ                                                {: RESULT = single(t); :}
              ;
         
-        
-/* block */      
+            
 block ::= NEWLINE INDENT stmt_list:sl DEDENT                              {: RESULT = sl; :};
 
 
-/* literal */
 literal ::= NONE:n                                                        {: RESULT = new NoneLiteral(nxleft, nxright); :}
           | TRUE:t                                                        {: RESULT = new BooleanLiteral(txleft, txright, true); :}
           | FALSE:f                                                       {: RESULT = new BooleanLiteral(fxleft, fxright, false); :}
@@ -336,7 +321,6 @@ literal ::= NONE:n                                                        {: RES
           | STRING:s                                                      {: RESULT = new StringLiteral(sxleft, sxright, s); :}
           ;
   
-/* expr */ 
 expr ::= cexpr:ce                                                         {: RESULT = ce; :}
        | NOT:n expr:exp                                                   {: RESULT = new UnaryExpr(nxleft, expxright, n, exp); :}
        | expr:e1 AND:a expr:e2                                            {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, a, e2); :}
@@ -345,13 +329,17 @@ expr ::= cexpr:ce                                                         {: RES
        ;
 
 
-/* cexpr */
 cexpr ::= pexpr:pe                                                        {: RESULT = pe; :}
-        | pexpr:p1 comp_op:co cexpr:p2                                    {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co.value, p2); :}
+        | pexpr:p1 EQEQ:co cexpr:p2                                       {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
+        | pexpr:p1 NOTEQ:co cexpr:p2                                      {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
+        | pexpr:p1 LTE:co cexpr:p2                                        {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
+        | pexpr:p1 GTE:co cexpr:p2                                        {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
+        | pexpr:p1 LT:co cexpr:p2                                         {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
+        | pexpr:p1 GT:co cexpr:p2                                         {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
+        | pexpr:p1 IS:co cexpr:p2                                         {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
         ;
 
 
-/* pexpr */
 pexpr ::= identifier:id                                                   {: RESULT = id; :}
         | literal:l                                                       {: RESULT = l; :}
         | LBRACK:lbrack expr_list:l RBRACK:rbrack                         {: RESULT = new ListExpr(lbrackxleft, rbrackxright, l); :}
@@ -365,6 +353,7 @@ pexpr ::= identifier:id                                                   {: RES
         | pexpr:p1 MULT:bo pexpr:p2                                       {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
         | pexpr:p1 DIV:bo pexpr:p2                                        {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
         | pexpr:p1 MOD:bo pexpr:p2                                        {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
+        | pexpr:p1 INTDIV:bo pexpr:p2                                     {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, bo, p2); :}
         | MINUS:m pexpr:p                                                 {: RESULT = new UnaryExpr(mxleft, pxright, m, p); :} %prec UMINUS
         ;
         
@@ -373,38 +362,15 @@ expr_list ::= expr:e                                                      {: RES
             |                                                             {: RESULT = new ArrayList<Expr>(); :}
             ;
 
-/* bin_op */ //We may still be able to use bin_op, so I left it here.
-bin_op ::= PLUS:a                                                         {: RESULT = new StringLiteral(axleft, axright, "+"); :}
-         | MINUS:a                                                        {: RESULT = new StringLiteral(axleft, axright, "-"); :}
-         | MULT:a                                                         {: RESULT = new StringLiteral(axleft, axright, "*"); :}
-         | DIV:a                                                          {: RESULT = new StringLiteral(axleft, axright, "/"); :}
-         | INTDIV:a                                                       {: RESULT = new StringLiteral(axleft, axright, "//"); :}
-         | MOD:a                                                          {: RESULT = new StringLiteral(axleft, axright, "%"); :} 
-         ;
 
-
-/* comp_op */ //this might also need some change in order not to break left associativity
-comp_op ::= EQEQ:a                                                        {: RESULT = new StringLiteral(axleft, axright, "=="); :} 
-          | NOTEQ:a                                                       {: RESULT = new StringLiteral(axleft, axright, "!="); :} 
-          | LTE:a                                                         {: RESULT = new StringLiteral(axleft, axright, "<="); :} 
-          | GTE:a                                                         {: RESULT = new StringLiteral(axleft, axright, ">="); :} 
-          | LT:a                                                          {: RESULT = new StringLiteral(axleft, axright, "<"); :} 
-          | GT:a                                                          {: RESULT = new StringLiteral(axleft, axright, ">"); :} 
-          | IS:a                                                          {: RESULT = new StringLiteral(axleft, axright, "is"); :}
-          ;
-
-
-/* member_expr */
 member_expr ::= pexpr:p DOT identifier:id                                 {: RESULT = new MemberExpr(pxleft, idxright, p, id); :}
               ;
 
 
-/* index_expr */
 index_expr ::= pexpr:p LBRACK expr:e RBRACK:rbrack                        {: RESULT = new IndexExpr(pxleft, rbrackxright, p, e); :}
              ;
     
     
-/* target */
 target ::= identifier:id                                                  {: RESULT = id; :}
          | member_expr:m                                                  {: RESULT = m; :} 
          | index_expr:i                                                   {: RESULT = i; :}
