@@ -180,8 +180,9 @@ non terminal Identifier        identifier;
 non terminal List<TypedVar>    typed_vars;
 non terminal GlobalDecl        global_decl;
 non terminal NonLocalDecl      nonlocal_decl;
-non terminal List<Expr>        opt_target, expr_list;
+non terminal List<Expr>        expr_list, target_list;
 non terminal Expr              target;
+non terminal AssignStmt        assign_stmt;
 non terminal MemberExpr        member_expr;
 non terminal IndexExpr         index_expr;
 
@@ -302,13 +303,15 @@ simple_stmt ::= PASS:p                                                    {: RES
               | expr:e                                                    {: RESULT = new ExprStmt(exleft, exright, e); :}
               | RETURN:r expr:e                                           {: RESULT = new ReturnStmt(rxleft, exright, e); :}
               | RETURN:r                                                  {: RESULT = new ReturnStmt(rxleft, rxright, null); :}
-              | opt_target:ot expr:e                                      {: RESULT = new AssignStmt(getLeft(ot), exright, ot, e); :}
+              | assign_stmt:st                                            {: RESULT = st; :}
               ;
             
             
-opt_target ::= opt_target:ot target:t EQ                                  {: RESULT = combine(ot, t); :}
-             | target:t EQ                                                {: RESULT = single(t); :}
-             ;
+assign_stmt ::= target_list:tl EQ expr:e                                  {: RESULT = new AssignStmt(getLeft(tl), exright, tl, e); :}
+              ;
+
+target_list ::= target:t                                                  {: RESULT = single(t); :}
+              | target_list:tl EQ target:t                             {: RESULT = combine(tl, t); :};
         
             
 block ::= NEWLINE INDENT stmt_list:sl DEDENT                              {: RESULT = sl; :};
@@ -325,6 +328,7 @@ expr ::= cexpr:ce                                                         {: RES
        | NOT:n expr:exp                                                   {: RESULT = new UnaryExpr(nxleft, expxright, n, exp); :}
        | expr:e1 AND:a expr:e2                                            {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, a, e2); :}
        | expr:e1 OR:o expr:e2                                             {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, o, e2);  :}
+       | expr:e1 IS:o expr:e2                                             {: RESULT = new BinaryExpr(e1xleft, e2xright, e1, o, e2);  :}
        | expr:e1 IF expr:e2 ELSE expr:e3                                  {: RESULT = new IfExpr(e1xleft, e3xright, e2, e1, e3); :}
        ;
 
@@ -336,7 +340,6 @@ cexpr ::= pexpr:pe                                                        {: RES
         | pexpr:p1 GTE:co cexpr:p2                                        {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
         | pexpr:p1 LT:co cexpr:p2                                         {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
         | pexpr:p1 GT:co cexpr:p2                                         {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
-        | pexpr:p1 IS:co cexpr:p2                                         {: RESULT = new BinaryExpr(p1xleft, p2xright, p1, co, p2); :}
         ;
 
 
