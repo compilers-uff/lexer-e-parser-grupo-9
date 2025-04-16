@@ -311,9 +311,6 @@ simple_stmt ::= PASS:p                                                    {: RES
               ;
             
             
-//sign_stmt ::= target_list:tl EQ expr:e                                  {: RESULT = new AssignStmt(getLeft(tl), exright, tl, e); :};
-
-
 target_list ::= target:t                                                  {: RESULT = single(t); :}
               | target_list:tl EQ target:t                                {: RESULT = combine(tl, t); :};
         

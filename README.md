@@ -59,6 +59,14 @@ To sync with updates upstream:
 
 - Horas totais: 67
 
+## Referências 
+
+- Jflex: https://www.jflex.de/
+- Jflex: https://johnidm.gitbooks.io/compiladores-para-humanos/content/part2/using-jflex-java-cup.html
+- Cup: https://www.cs.princeton.edu/~appel/modern/java/CUP/manual.html
+- Cup: https://javadoc.io/doc/edu.princeton.cup/java-cup/latest/index.html
+- Cup: https://www.inf.ufes.br/~tavares/labcomp2000/downlex.html
+
 ## Respostas da Entrega 1
 
 **###1- Que estratégia você usou para emitir tokens INDENT e DEDENT corretamente? Mencione o nome do arquivo e o(s) número(s) da(s) linha(s) para a parte principal da sua solução.**
@@ -71,4 +79,4 @@ R: Nossa solução implementa os requisitos do manual do ChocoPy sobre indentaç
 
 **###3 Qual foi a característica mais difícil da linguagem (não incluindo identação) neste projeto? Por que foi um desafio? Mencione o nome do arquivo e o(s) número(s) da(s) linha(s) para a parte principal de a sua solução.**
 
-R: Consideramos que a característica mais difícil, foi sem dúvidas o tratamento do if, elif e else, para garantir que a estrutura de um if com vários elif e else, fossem corretamente transformadas em uma sequência de nós IfStmt aninhados. Isso não é trivial de expressar gramaticamente, pois exige uma recursividade cuidadosa para diferenciar um elif (um novo IfStmt) e um else (finaliza a cadeia condicional). Isso tudo foi no arquivo ChocoPy.cup, o if (linhas 289-293), elif e else(linhas 296-299).
+R: Consideramos que a característica mais difícil, foi sem dúvidas o tratamento do if, elif e else, para garantir que a estrutura de um if com vários elif e else, fossem corretamente transformadas em uma sequência de nós IfStmt aninhados. Isso não é trivial de expressar gramaticamente, pois exige uma recursividade cuidadosa para diferenciar um elif (um novo IfStmt) e um else (finaliza a cadeia condicional). Isso tudo foi no arquivo ChocoPy.cup, o if (linhas 293-297), elif e else(linhas 300-303).
