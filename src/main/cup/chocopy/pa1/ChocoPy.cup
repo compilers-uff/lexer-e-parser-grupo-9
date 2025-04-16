@@ -207,8 +207,8 @@ program ::= program_head:d opt_stmt_list:s
           {: 
             ComplexSymbolFactory.Location left = d.isEmpty() ? getLeft(s) : getLeft(d);
             if(left == null)
-                 left = new ComplexSymbolFactory.Location(1,1);
-                 RESULT = new Program(left, sxright, d, s, errors);
+                left = new ComplexSymbolFactory.Location(1,1);
+                RESULT = new Program(left, sxright, d, s, errors);
           :}
           ;
 
@@ -226,7 +226,9 @@ opt_stmt_list ::=                                                         {: RES
                 ;
 
 
-class_def ::= CLASS:c identifier:id LPAREN identifier:parentId RPAREN COLON NEWLINE INDENT class_body:cb DEDENT   {: RESULT = new ClassDef(cxleft, cbxright, id, parentId, cb); :}; 
+class_def ::= CLASS:c identifier:id LPAREN identifier:parentId RPAREN COLON NEWLINE INDENT class_body:cb DEDENT  
+            {: RESULT = new ClassDef(cxleft, cbxright, id, parentId, cb); :}
+            ; 
 
 
 class_body ::= PASS NEWLINE                                               {: RESULT = empty(); :}
@@ -243,7 +245,9 @@ class_body_defs ::= class_body_defs:defs var_def:vd                       {: RES
 
 
 fun_def ::= DEF:def identifier:id LPAREN typed_vars:params RPAREN ret_type:rt COLON:col NEWLINE INDENT fun_body_decs:fbd stmt_list:sl DEDENT       
-            {: TypeAnnotation _rt = rt;if((rt instanceof ClassType) && ((ClassType)rt).className == "<None>") _rt = new ClassType( colxright, colxright, "<None>");RESULT = new FuncDef(defxleft, slxright, id, params, _rt, fbd, sl); :}
+            {: TypeAnnotation _rt = rt;if((rt instanceof ClassType) && ((ClassType)rt).className == "<None>") 
+            _rt = new ClassType( colxright, colxright, "<None>");
+            RESULT = new FuncDef(defxleft, slxright, id, params, _rt, fbd, sl); :}
             ;
 
 
